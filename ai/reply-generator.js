@@ -17,12 +17,13 @@ function hasBlacklistedPhrases(text) {
  *
  * @param {object} tweet         - Normalized tweet object
  * @param {string} researchNotes - Brave Search findings (or empty string)
+ * @param {string} voiceProfile  - Real-tweet style profile from voice-sampler
  * @returns {object}             - { selectedReply, style, allOptions, regenerated }
  */
-async function generateReply(tweet, researchNotes = '') {
+async function generateReply(tweet, researchNotes = '', voiceProfile = '') {
   const lastStyle = _usedStyles[_usedStyles.length - 1] || '';
 
-  const userPrompt = buildPrompt(tweet, researchNotes, lastStyle);
+  const userPrompt = buildPrompt(tweet, researchNotes, lastStyle, voiceProfile);
 
   let result;
   let regenerated = false;
@@ -54,7 +55,7 @@ async function generateReply(tweet, researchNotes = '') {
 
 CRITICAL REGENERATION: The previous reply contained AI-sounding language. The reply MUST NOT contain any of these phrases or anything similar: ${persona.blacklist.slice(0, 15).join(', ')}.
 
-Be blunt, technical, casual. Sound like a 20-year-old builder on Twitter. Not a language model.`;
+Be blunt, technical, casual. Sound EXACTLY like the real tweet examples above. Not a language model.`;
 
     result = await callClaudeJSON(persona.systemPrompt, stricterPrompt, {
       model: 'claude-haiku-4-5-20251001',
@@ -93,7 +94,7 @@ function countViolations(text) {
   return persona.blacklist.filter(p => lower.includes(p.toLowerCase())).length;
 }
 
-function buildPrompt(tweet, researchNotes, lastStyle) {
+function buildPrompt(tweet, researchNotes, lastStyle, voiceProfile = '') {
   const sections = [
     `Generate a reply to this tweet on behalf of Lubosi (@lubosi_k).`,
     ``,
@@ -104,6 +105,17 @@ function buildPrompt(tweet, researchNotes, lastStyle) {
     `ENGAGEMENT: ${tweet.likes} likes, ${tweet.replies} replies, ${tweet.retweets} retweets`,
     `TWEET URL: ${tweet.url}`,
   ];
+
+  // Inject real writing style from sampled tweets — highest priority signal
+  if (voiceProfile) {
+    sections.push(
+      ``,
+      `━━ LUBOSI'S REAL WRITING STYLE (extracted from his actual tweets) ━━`,
+      `This is how he ACTUALLY types. Match this exactly — punctuation, sentence length, vocabulary, tone:`,
+      voiceProfile,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    );
+  }
 
   if (researchNotes) {
     sections.push('', 'RESEARCH CONTEXT (facts NOT in the tweet — use these to add value):', researchNotes);

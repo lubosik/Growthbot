@@ -26,6 +26,7 @@ validateEnv({ requireWriteAccess: !DRY_RUN && !DISCOVER_ONLY && !NOTIFY_ONLY && 
 
 // ── Module imports ─────────────────────────────────────────────────────────
 const { getRWClient }                     = require('./twitter/client');
+const { loadVoiceProfile }                = require('./persona/voice-sampler');
 const { discoverTweets, loadSeenIds }     = require('./discovery/tweet-search');
 const { enrichWithComments }              = require('./discovery/comment-reader');
 const { selectTopTweets }                 = require('./discovery/scorer');
@@ -85,6 +86,20 @@ async function main() {
     console.error('     Go to developer.x.com → App → Keys & Tokens → Regenerate.');
     console.error('     Then re-run: node auth.js');
     process.exit(1);
+  }
+
+  // ── Step 0b: Load voice profile ──────────────────────────────────────────
+  // Runs in background — won't block or crash if it fails
+  let voiceProfile = '';
+  try {
+    voiceProfile = await loadVoiceProfile();
+    if (voiceProfile) {
+      console.log('        ✓ Voice profile loaded');
+    } else {
+      console.log('        Voice profile unavailable — using default persona');
+    }
+  } catch (_) {
+    console.log('        Voice profile skipped');
   }
 
   // ── Step 1: Budget check ─────────────────────────────────────────────────
@@ -190,7 +205,7 @@ async function main() {
 
   for (const tweet of researchedTweets) {
     try {
-      const replyResult = await generateReply(tweet, tweet.researchNotes || '');
+      const replyResult = await generateReply(tweet, tweet.researchNotes || '', voiceProfile);
       claudeCallCount++;
 
       if (replyResult.regenerated) claudeCallCount++; // Counted twice if regenerated
@@ -200,7 +215,7 @@ async function main() {
       // For quote tweets, generate the quote text using Sonnet
       let quoteText = null;
       if (isQuote) {
-        const quoteResult = await generateReply(tweet, tweet.researchNotes || '');
+        const quoteResult = await generateReply(tweet, tweet.researchNotes || '', voiceProfile);
         quoteText = quoteResult.selectedReply.text;
         claudeCallCount++;
       }
