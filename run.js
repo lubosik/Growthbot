@@ -79,7 +79,7 @@ async function main() {
   }
 
   const mode = budgetStatus.mode || 'normal';
-  console.log(`        Mode: ${mode} | Est. spend: $${budgetStatus.estimatedSpend.toFixed(4)}`);
+  console.log(`        Mode: ${mode} | Est. spend: $${(budgetStatus.estimated_spend ?? 0).toFixed(4)}`);
 
   // ── Initialize log ───────────────────────────────────────────────────────
   const log = loadTodayLog();
