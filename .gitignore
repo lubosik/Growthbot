@@ -1,0 +1,8 @@
+.vercel
+node_modules/
+.env
+logs/*.json
+logs/.rate-state.json
+.DS_Store
+*.log
+/tmp/

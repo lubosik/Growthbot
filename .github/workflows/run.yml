@@ -1,0 +1,70 @@
+name: X Engagement Bot
+
+on:
+  # Daily automated run at 9:00 AM UTC
+  schedule:
+    - cron: '0 9 * * *'
+
+  # Manual trigger from dashboard or GitHub UI
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — discover + generate but do not post'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      discover_only:
+        description: 'Discover only — just find and score tweets'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60    # Plenty of time for full run with human delays
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run bot
+        run: |
+          FLAGS=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            FLAGS="$FLAGS --dry-run"
+          fi
+          if [ "${{ github.event.inputs.discover_only }}" = "true" ]; then
+            FLAGS="$FLAGS --discover-only"
+          fi
+          echo "Running: node run.js $FLAGS"
+          node run.js $FLAGS
+        env:
+          # ── X / Twitter ──────────────────────────────────────────
+          TWITTER_API_KEY:      ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET:   ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+          MY_TWITTER_HANDLE:    ${{ secrets.MY_TWITTER_HANDLE }}
+          MY_TWITTER_USER_ID:   ${{ secrets.MY_TWITTER_USER_ID }}
+          # ── AI ───────────────────────────────────────────────────
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          # ── Telegram ─────────────────────────────────────────────
+          TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
+          # ── Storage (Upstash Redis) ───────────────────────────────
+          UPSTASH_REDIS_REST_URL:   ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
