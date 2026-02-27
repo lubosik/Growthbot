@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const storage = require('../lib/storage');
 
 const LOGS_DIR = path.join(__dirname, '../logs');
 
@@ -46,8 +47,16 @@ function initDayLog() {
 
 /**
  * Load today's existing log if it exists (for continuation).
+ * Tries Redis first (production/GH Actions), falls back to local filesystem.
  */
-function loadTodayLog() {
+async function loadTodayLog() {
+  const key = `log:${getTodayKey()}`;
+  if (storage.IS_REDIS) {
+    try {
+      const data = await storage.get(key);
+      if (data) return data;
+    } catch (_) {}
+  }
   const logPath = getLogPath(getTodayKey());
   try {
     if (fs.existsSync(logPath)) {
@@ -58,13 +67,16 @@ function loadTodayLog() {
 }
 
 /**
- * Save the daily log to disk.
+ * Save the daily log to disk and to Redis (so the dashboard can read it).
  */
-function saveLog(log) {
+async function saveLog(log) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
   log.runCompleted = new Date().toISOString();
-  const logPath = getLogPath(log.date || getTodayKey());
+  const dateKey = log.date || getTodayKey();
+  const logPath = getLogPath(dateKey);
   fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
+  // Persist to storage so the dashboard APIs (which read Redis) can see it
+  await storage.set(`log:${dateKey}`, log);
 }
 
 /**

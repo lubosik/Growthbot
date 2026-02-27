@@ -82,7 +82,7 @@ async function main() {
   console.log(`        Mode: ${mode} | Est. spend: $${(budgetStatus.estimated_spend ?? 0).toFixed(4)}`);
 
   // ── Initialize log ───────────────────────────────────────────────────────
-  const log = loadTodayLog();
+  const log = await loadTodayLog();
   log.mode = mode;
   log.runStarted = new Date().toISOString();
 
@@ -113,7 +113,7 @@ async function main() {
 
   if (tweets.length === 0) {
     console.warn('No tweets found. Ending run.');
-    saveLog(log);
+    await saveLog(log);
     return;
   }
 
@@ -130,7 +130,7 @@ async function main() {
       console.log(`${i + 1}. [${t.score}] @${t.authorUsername}: ${t.text.substring(0, 80)}...`);
       console.log(`   Reasons: ${t.scoreReasons.join(', ')}`);
     });
-    saveLog(log);
+    await saveLog(log);
     return;
   }
 
@@ -215,7 +215,7 @@ async function main() {
       if (plan.shouldRetweet) console.log('   → Would retweet');
       if (plan.shouldQuote) console.log(`   → Would quote: "${plan.quoteText}"`);
     });
-    saveLog(log);
+    await saveLog(log);
     return;
   }
 
@@ -298,7 +298,7 @@ async function main() {
     remaining: Math.max(0, finalBudget.hardStop - finalBudget.estimatedSpend),
   };
   log.cost.estimatedCost = `$${(finalBudget.todayBreakdown?.estimated_cost || 0).toFixed(4)}`;
-  saveLog(log);
+  await saveLog(log);
 
   printConsoleSummary(log, finalBudget);
 }
