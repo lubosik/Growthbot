@@ -2,10 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>X Engagement Bot — @lubosi_k</title>
+
+<!-- PWA / iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="X Bot">
+<meta name="theme-color" content="#060611">
+
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after {
+    box-sizing: border-box; margin: 0; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
 
   :root {
     --blue:   #0A84FF;
@@ -86,7 +96,7 @@
   }
   .nav-left  { display:flex;align-items:center;gap:12px; }
   .nav-avatar {
-    width:36px;height:36px;border-radius:50%;
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
     background:linear-gradient(135deg,var(--blue),var(--purple));
     display:flex;align-items:center;justify-content:center;
     font-size:16px;font-weight:700;
@@ -98,7 +108,7 @@
   .nav-right { display:flex;align-items:center;gap:10px; }
 
   .status-dot {
-    width:8px;height:8px;border-radius:50%;
+    width:8px;height:8px;border-radius:50%;flex-shrink:0;
     background:var(--text-3);
     transition:background .3s,box-shadow .3s;
   }
@@ -111,21 +121,23 @@
 
   .status-label { font-size:13px;color:var(--text-2); }
   .mode-badge {
-    font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
-    text-transform:uppercase;letter-spacing:.5px;
+    font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;
+    text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;
   }
   .mode-normal  { background:rgba(48,209,88,.18); color:var(--mint);   border:1px solid rgba(48,209,88,.3); }
   .mode-reduced { background:rgba(255,159,10,.18);color:var(--orange); border:1px solid rgba(255,159,10,.3); }
 
   /* Settings gear */
   .gear-btn {
-    width:34px;height:34px;border-radius:50%;
+    width:44px;height:44px;border-radius:50%;
     background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
-    color:var(--text-2);font-size:16px;cursor:pointer;
+    color:var(--text-2);font-size:18px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
     transition:all .2s;font-family:inherit;
+    touch-action:manipulation;
   }
   .gear-btn:hover { background:rgba(255,255,255,.14);color:var(--text); }
+  .gear-btn:active { background:rgba(255,255,255,.20);color:var(--text);transform:scale(.93); }
 
   /* ── Hero ─────────────────────────────────────────────────────────── */
   .hero { padding:32px 0 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px; }
@@ -146,21 +158,29 @@
   .control-title { font-size:14px;font-weight:600;margin-bottom:4px; }
   .control-sub   { font-size:12px;color:var(--text-2); }
 
+  /* Desktop control buttons wrapper */
+  .control-btns { display:flex;gap:10px;align-items:center;flex-wrap:wrap; }
+
   .btn {
     padding:10px 22px;border-radius:var(--r-sm);font-size:14px;font-weight:600;
     border:none;cursor:pointer;transition:all .2s;font-family:inherit;
-    display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;
+    min-height:44px;touch-action:manipulation;
   }
   .btn:disabled { opacity:.45;cursor:not-allowed; }
   .btn-primary { background:var(--blue);color:#fff;box-shadow:0 4px 18px rgba(10,132,255,.4); }
-  .btn-primary:not(:disabled):hover { background:#1a8fff;box-shadow:0 6px 22px rgba(10,132,255,.55);transform:translateY(-1px); }
+  .btn-primary:not(:disabled):hover  { background:#1a8fff;box-shadow:0 6px 22px rgba(10,132,255,.55);transform:translateY(-1px); }
+  .btn-primary:not(:disabled):active { background:#0070e0;box-shadow:0 2px 10px rgba(10,132,255,.4);transform:scale(.97); }
   .btn-secondary { background:rgba(255,255,255,.1);color:var(--text);border:1px solid rgba(255,255,255,.18); }
-  .btn-secondary:not(:disabled):hover { background:rgba(255,255,255,.16);transform:translateY(-1px); }
+  .btn-secondary:not(:disabled):hover  { background:rgba(255,255,255,.16);transform:translateY(-1px); }
+  .btn-secondary:not(:disabled):active { background:rgba(255,255,255,.22);transform:scale(.97); }
   .btn-danger { background:rgba(255,69,58,.15);color:var(--red);border:1px solid rgba(255,69,58,.3); }
   .btn-danger:not(:disabled):hover  { background:rgba(255,69,58,.25); }
+  .btn-danger:not(:disabled):active { background:rgba(255,69,58,.32);transform:scale(.97); }
 
   .workflow-link {
     font-size:12px;color:var(--blue);text-decoration:none;margin-left:auto;white-space:nowrap;opacity:.8;
+    min-height:44px;display:inline-flex;align-items:center;
   }
   .workflow-link:hover { opacity:1; }
 
@@ -240,7 +260,7 @@
   .section-count { font-size:12px;color:var(--text-3);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px; }
   .chart-area { display:flex;align-items:flex-end;gap:10px;height:110px;margin-top:20px; }
   .chart-group { flex:1;display:flex;flex-direction:column;align-items:center;gap:4px; }
-  .chart-bars { display:flex;align-items:flex-end;gap:3px;height:80px; }
+  .chart-bars { display:flex;align-items:flex-end;gap:3px;height:80px;width:100%; }
   .chart-bar { width:14px;border-radius:3px 3px 0 0;min-height:3px;position:relative;cursor:default; }
   .chart-bar:hover::after { content:attr(data-v);position:absolute;bottom:calc(100%+4px);left:50%;transform:translateX(-50%);background:rgba(15,15,25,.95);color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none; }
   .bar-r { background:var(--blue);opacity:.9; }
@@ -274,7 +294,7 @@
   .reply-text { font-size:14px;color:var(--text);line-height:1.5; }
   .reply-footer { display:flex;align-items:center;justify-content:space-between;margin-top:10px; }
   .reply-date { font-size:11px;color:var(--text-3); }
-  .reply-link { font-size:11px;color:var(--blue);text-decoration:none;opacity:.7; }
+  .reply-link { font-size:11px;color:var(--blue);text-decoration:none;opacity:.7;min-height:44px;display:inline-flex;align-items:center; }
   .reply-link:hover { opacity:1; }
 
   /* ── Side column ──────────────────────────────────────────────────── */
@@ -287,7 +307,7 @@
   .idea-type { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--orange);margin-bottom:6px; }
   .idea-title { font-size:13px;font-weight:600;line-height:1.4;margin-bottom:6px; }
   .idea-desc { font-size:12px;color:var(--text-2);line-height:1.5; }
-  .idea-link { display:inline-block;font-size:11px;color:var(--blue);text-decoration:none;margin-top:8px;opacity:.7; }
+  .idea-link { display:inline-flex;align-items:center;font-size:11px;color:var(--blue);text-decoration:none;margin-top:8px;opacity:.7;min-height:44px; }
   .idea-link:hover { opacity:1; }
 
   /* ── Workflow card ────────────────────────────────────────────────── */
@@ -303,7 +323,7 @@
   .wf-info { flex:1; }
   .wf-status { font-size:13px;font-weight:600;text-transform:capitalize; }
   .wf-time   { font-size:11px;color:var(--text-3);margin-top:2px; }
-  .wf-link { font-size:11px;color:var(--blue);text-decoration:none;opacity:.7; }
+  .wf-link { font-size:11px;color:var(--blue);text-decoration:none;opacity:.7;min-height:44px;display:inline-flex;align-items:center;padding:0 4px; }
   .wf-link:hover { opacity:1; }
 
   /* ── Errors ───────────────────────────────────────────────────────── */
@@ -324,11 +344,12 @@
     position:fixed;inset:0;z-index:1000;
     background:rgba(0,0,0,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     display:flex;align-items:center;justify-content:center;
+    padding:20px;
     opacity:0;pointer-events:none;transition:opacity .2s;
   }
   .modal-overlay.open { opacity:1;pointer-events:all; }
   .modal {
-    width:min(400px,90vw);border-radius:var(--r-xl);padding:32px;
+    width:min(400px,100%);border-radius:var(--r-xl);padding:32px;
     background:rgba(15,15,28,.95);
     border:1px solid rgba(255,255,255,.18);
     border-top-color:rgba(255,255,255,.3);
@@ -341,7 +362,7 @@
   .modal-input {
     width:100%;padding:12px 16px;border-radius:var(--r-sm);
     background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-    color:#fff;font-size:14px;font-family:inherit;margin-bottom:16px;outline:none;
+    color:#fff;font-size:16px;font-family:inherit;margin-bottom:16px;outline:none;
     transition:border-color .2s;
   }
   .modal-input:focus { border-color:var(--blue); }
@@ -351,16 +372,112 @@
   .modal-error { font-size:12px;color:var(--red);margin-bottom:10px;display:none; }
   .modal-error.visible { display:block; }
 
-  /* ── Responsive ───────────────────────────────────────────────────── */
-  @media (max-width:900px) {
-    .main-grid { grid-template-columns:1fr; }
-    .stats-row { grid-template-columns:repeat(2,1fr); }
-    .budget-grid { grid-template-columns:repeat(2,1fr); }
-    .hero { flex-direction:column; }
+  /* ── Mobile bottom action bar ─────────────────────────────────────── */
+  .mobile-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 200;
+    padding: 10px 16px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(6,6,17,0.88);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border-top: 1px solid rgba(255,255,255,0.12);
+    gap: 10px;
   }
-  @media (max-width:500px) {
-    .wrap { padding:0 16px 40px; }
-    .stats-row { grid-template-columns:1fr 1fr; }
+  .mobile-bar .btn {
+    flex: 1;
+    min-height: 52px;
+    font-size: 15px;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .budget-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero { flex-direction: column; }
+  }
+
+  @media (max-width: 640px) {
+    /* Show mobile action bar, hide desktop control buttons */
+    .mobile-bar { display: flex; }
+    .control-btns { display: none; }
+
+    /* Wrap: account for fixed mobile bar + safe area */
+    .wrap { padding: 0 14px calc(80px + env(safe-area-inset-bottom, 0px)); }
+
+    /* Navbar */
+    .navbar { margin: 0 -14px; padding: 0 14px; }
+    .nav-inner { padding: 0 14px; height: 56px; }
+    .status-label { display: none; }
+    .nav-title { font-size: 14px; }
+    .nav-handle { font-size: 11px; }
+
+    /* Hero */
+    .hero { padding: 16px 0 12px; flex-direction: column; gap: 10px; }
+    .hero-left h1 { font-size: clamp(20px, 5vw, 26px); }
+    .hero-left p { font-size: 13px; }
+    .hero-right { align-self: flex-start; text-align: left; }
+    .spend-amount { font-size: 26px; }
+    .spend-label { font-size: 12px; }
+
+    /* Control panel */
+    .control-panel { padding: 14px 16px; flex-direction: column; align-items: stretch; gap: 10px; }
+    .control-left { min-width: 0; }
+    .control-sub { font-size: 11px; }
+    .workflow-link { margin-left: 0; align-self: flex-start; }
+
+    /* Stats */
+    .stat-card { padding: 14px 16px; }
+    .stat-card:hover { transform: none; }
+    .stat-value { font-size: 30px; }
+    .stat-icon { font-size: 18px; margin-bottom: 8px; }
+    .stat-sub { display: none; }
+    .stats-row { gap: 12px; }
+
+    /* Budget */
+    .budget-card { padding: 18px 18px; }
+    .budget-spent { font-size: 28px; }
+
+    /* Chart */
+    .chart-panel { padding: 18px 16px; }
+    .chart-area { height: 120px; gap: 6px; }
+    .chart-group { gap: 3px; }
+    .chart-bar { width: auto; flex: 1; min-width: 3px; }
+    .chart-bars { gap: 2px; }
+    .chart-label { font-size: 10px; }
+    .chart-legend { gap: 12px; }
+    .legend-item { font-size: 11px; gap: 4px; }
+
+    /* Panels */
+    .replies-panel, .ideas-panel, .workflow-card { padding: 16px; }
+    .errors-panel { padding: 14px 16px; }
+
+    /* Reply items - no slide on mobile */
+    .reply-item { padding: 12px 14px; }
+    .reply-item:hover { transform: none; background: rgba(255,255,255,.04); }
+    .reply-text { font-size: 13px; }
+
+    /* Footer */
+    .footer { font-size: 11px; padding-top: 14px; }
+
+    /* Modal */
+    .modal { padding: 24px 18px; border-radius: var(--r-lg); }
+    .modal h3 { font-size: 16px; }
+
+    /* Run status bar wraps text */
+    .run-status-bar { flex-wrap: wrap; }
+    #runStatusText { flex: 1; min-width: 0; }
+  }
+
+  @media (max-width: 390px) {
+    .wrap { padding-left: 12px; padding-right: 12px; }
+    .stats-row { gap: 10px; }
+    .budget-grid { grid-template-columns: 1fr; }
+    .chart-area { gap: 4px; }
+    .mode-badge { display: none; }
   }
 </style>
 </head>
@@ -387,7 +504,7 @@
         <div class="status-dot idle" id="statusDot"></div>
         <span class="status-label" id="statusLabel">Loading...</span>
         <span class="mode-badge mode-normal" id="modeBadge">Normal</span>
-        <button class="gear-btn" onclick="openSettings()" title="Settings">⚙</button>
+        <button class="gear-btn" onclick="openSettings()" title="Settings" aria-label="Settings">⚙</button>
       </div>
     </div>
   </div>
@@ -410,8 +527,11 @@
       <div class="control-title">Pipeline Control</div>
       <div class="control-sub" id="lastRunLabel">Pipeline runs daily at 9:00 AM UTC via GitHub Actions</div>
     </div>
-    <button class="btn btn-primary" id="btnRun" onclick="triggerRun(false)">▶ Run Now</button>
-    <button class="btn btn-secondary" id="btnDryRun" onclick="triggerRun(true)">🔍 Dry Run</button>
+    <!-- Hidden on mobile (buttons move to bottom bar) -->
+    <div class="control-btns">
+      <button class="btn btn-primary" id="btnRun" onclick="triggerRun(false)">▶ Run Now</button>
+      <button class="btn btn-secondary" id="btnDryRun" onclick="triggerRun(true)">🔍 Dry Run</button>
+    </div>
     <a class="workflow-link" id="workflowLink" href="#" target="_blank" style="display:none">View on GitHub →</a>
 
     <div class="run-status-bar" id="runStatusBar">
@@ -534,13 +654,19 @@
   </div>
 </div>
 
+<!-- Mobile bottom action bar -->
+<div class="mobile-bar" id="mobileBar">
+  <button class="btn btn-primary" id="btnRunMobile" onclick="triggerRun(false)">▶ Run Now</button>
+  <button class="btn btn-secondary" id="btnDryRunMobile" onclick="triggerRun(true)">🔍 Dry Run</button>
+</div>
+
 <!-- Settings modal -->
 <div class="modal-overlay" id="settingsModal" onclick="closeSettings(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h3>🔑 Trigger Secret</h3>
-    <p>Enter the TRIGGER_SECRET from your Vercel environment to enable the Run Now button. This is stored only in your browser session.</p>
+    <p>Enter the TRIGGER_SECRET from your Vercel environment to enable the Run Now button. Stored only in your browser session.</p>
     <div class="modal-error" id="modalError"></div>
-    <input class="modal-input" type="password" id="secretInput" placeholder="Enter trigger secret..." />
+    <input class="modal-input" type="password" id="secretInput" placeholder="Enter trigger secret..." autocomplete="current-password" />
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-primary" onclick="saveSecret()">Save</button>
@@ -582,11 +708,19 @@ async function api(url) {
   } catch { return null; }
 }
 
+// ── Button helper ──────────────────────────────────────────────────────────
+function setRunBtns(disabled) {
+  ['btnRun','btnDryRun','btnRunMobile','btnDryRunMobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+}
+
 // ── Secret modal ───────────────────────────────────────────────────────────
 function openSettings() {
   document.getElementById('secretInput').value = _secret;
   document.getElementById('settingsModal').classList.add('open');
-  setTimeout(() => document.getElementById('secretInput').focus(), 100);
+  setTimeout(() => document.getElementById('secretInput').focus(), 150);
 }
 
 function closeSettings(e) {
@@ -608,7 +742,9 @@ function saveSecret() {
 }
 
 // Close modal on Escape
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings({ target: document.getElementById('settingsModal') }); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSettings({ target: document.getElementById('settingsModal') });
+});
 
 // ── Run trigger ────────────────────────────────────────────────────────────
 async function triggerRun(isDry) {
@@ -617,15 +753,14 @@ async function triggerRun(isDry) {
     return;
   }
 
-  const btnRun    = document.getElementById('btnRun');
-  const btnDry    = document.getElementById('btnDryRun');
   const bar       = document.getElementById('runStatusBar');
   const statusTxt = document.getElementById('runStatusText');
+  const spinner   = document.getElementById('runSpinner');
 
-  btnRun.disabled = true;
-  btnDry.disabled = true;
+  setRunBtns(true);
   bar.classList.add('visible');
   statusTxt.textContent = isDry ? 'Queueing dry run...' : 'Queueing pipeline run...';
+  spinner.style.display = '';
 
   try {
     const resp = await fetch('/api/trigger', {
@@ -640,38 +775,37 @@ async function triggerRun(isDry) {
     const data = await resp.json();
 
     if (resp.ok && data.ok) {
-      statusTxt.textContent = `✓ ${data.message} — GitHub Actions job queued. Check "Recent Runs" below.`;
-      document.getElementById('runSpinner').style.display = 'none';
+      statusTxt.textContent = `✓ ${data.message} — GitHub Actions job queued.`;
+      spinner.style.display = 'none';
       startPollingWorkflow();
 
       setTimeout(() => {
-        btnRun.disabled = false;
-        btnDry.disabled = false;
+        setRunBtns(false);
         bar.classList.remove('visible');
-        document.getElementById('runSpinner').style.display = '';
+        spinner.style.display = '';
       }, 8000);
     } else {
       const errMsg = data.error || 'Unknown error';
       statusTxt.textContent = `✗ ${errMsg}`;
-      document.getElementById('runSpinner').style.display = 'none';
+      spinner.style.display = 'none';
       if (resp.status === 401) {
         sessionStorage.removeItem('trigger_secret');
         _secret = '';
         setTimeout(openSettings, 1500);
       }
       setTimeout(() => {
-        btnRun.disabled = false;
-        btnDry.disabled = false;
+        setRunBtns(false);
         bar.classList.remove('visible');
-        document.getElementById('runSpinner').style.display = '';
+        spinner.style.display = '';
       }, 5000);
     }
   } catch (err) {
     statusTxt.textContent = '✗ Network error: ' + err.message;
+    spinner.style.display = 'none';
     setTimeout(() => {
-      btnRun.disabled = false;
-      btnDry.disabled = false;
+      setRunBtns(false);
       bar.classList.remove('visible');
+      spinner.style.display = '';
     }, 4000);
   }
 }
@@ -704,7 +838,7 @@ function renderStatus(status) {
 // ── Today ──────────────────────────────────────────────────────────────────
 function renderToday(today) {
   if (!today) {
-    document.getElementById('heroSub').textContent = 'No runs today yet. Click Run Now to start.';
+    document.getElementById('heroSub').textContent = 'No runs today yet. Tap Run Now to start.';
     ['sReplies','sLikes','sRTs','sQuotes'].forEach(id => document.getElementById(id).textContent = '0');
     return;
   }
@@ -712,7 +846,7 @@ function renderToday(today) {
   const d = new Date(today.date + 'T12:00:00Z');
   document.getElementById('heroDate').textContent = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', timeZone:'UTC' });
   document.getElementById('heroSub').textContent =
-    `Run #${today.runNumber||1} · ${timeAgo(today.runStarted)} · ${today.tweetsDiscovered||0} tweets discovered · Mode: ${today.mode||'normal'}`;
+    `Run #${today.runNumber||1} · ${timeAgo(today.runStarted)} · ${today.tweetsDiscovered||0} discovered · ${today.mode||'normal'} mode`;
 
   const a = today.actions || {};
   document.getElementById('sReplies').textContent = fmt(a.replies);
@@ -820,8 +954,8 @@ function renderChart(logs) {
     const r = a.replies||0, l = a.likes||0, rt = a.retweets||0;
     return `<div class="chart-group">
       <div class="chart-bars">
-        <div class="chart-bar bar-r" style="height:${Math.max(3,Math.round((r/maxAll)*H))}px" data-v="${r} replies"></div>
-        <div class="chart-bar bar-l" style="height:${Math.max(3,Math.round((l/maxAll)*H))}px" data-v="${l} likes"></div>
+        <div class="chart-bar bar-r"  style="height:${Math.max(3,Math.round((r/maxAll)*H))}px"  data-v="${r} replies"></div>
+        <div class="chart-bar bar-l"  style="height:${Math.max(3,Math.round((l/maxAll)*H))}px"  data-v="${l} likes"></div>
         <div class="chart-bar bar-rt" style="height:${Math.max(3,Math.round((rt/maxAll)*H))}px" data-v="${rt} RTs"></div>
       </div>
       <div class="chart-label">${fmtDay(day.date)}</div>
@@ -840,10 +974,8 @@ function renderWorkflow(data) {
   }
 
   const runs = data.workflow.runs;
-
-  // Show GitHub link
-  link.href = `https://github.com/${document.getElementById('workflowLink').dataset.repo || ''}/actions`;
-  link.style.display = 'inline';
+  link.href = `https://github.com/${link.dataset.repo || ''}/actions`;
+  link.style.display = 'inline-flex';
 
   container.innerHTML = runs.map(run => {
     const statusClass  = run.status === 'completed' ? (run.conclusion || 'done') : run.status;
@@ -872,7 +1004,7 @@ function startPollingWorkflow() {
     if (!active) {
       clearInterval(_pollInterval);
       _pollInterval = null;
-      refresh(); // Final refresh when done
+      refresh();
     }
   }, 8000);
 }
@@ -893,13 +1025,11 @@ async function refresh() {
   renderBudget(budget);
   renderWorkflow(wfStatus);
 
-  // Auto-poll if a run is active
   const wfRuns = wfStatus?.workflow?.runs || [];
   if (wfRuns.some(r => r.status === 'in_progress' || r.status === 'queued')) {
     startPollingWorkflow();
   }
 
-  // Update last-run label
   const lastRun = (history||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
   if (lastRun?.runCompleted) {
     document.getElementById('lastRunLabel').textContent =
