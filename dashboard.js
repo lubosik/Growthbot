@@ -57,7 +57,35 @@ app.get('/api/budget', (req, res) => {
   try {
     const budget = loadBudget();
     const status = getBudgetStatus();
-    res.json({ ok: true, data: { ...budget, ...status } });
+
+    // Aggregate posts this month + last run info from daily logs
+    const currentMonth = budget.month; // e.g. "2026-02"
+    let postsThisMonth = 0;
+    let lastRunTime = null;
+    let lastRunErrors = 0;
+    try {
+      const logs = loadRecentLogs(31);
+      for (const log of logs) {
+        if (!log.date || !log.date.startsWith(currentMonth)) continue;
+        const a = log.actions || {};
+        postsThisMonth += (a.replies || 0) + (a.quoteTweets || 0);
+        if (!lastRunTime || (log.runCompleted && log.runCompleted > lastRunTime)) {
+          lastRunTime = log.runCompleted || log.runStarted;
+          lastRunErrors = (log.errors || []).length;
+        }
+      }
+    } catch (_) {}
+
+    res.json({
+      ok: true,
+      data: {
+        ...budget,
+        ...status,
+        posts_this_month: postsThisMonth,
+        last_run: lastRunTime,
+        last_run_errors: lastRunErrors,
+      },
+    });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

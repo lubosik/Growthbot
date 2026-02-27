@@ -25,6 +25,7 @@ const { validateEnv } = require('./config/env');
 validateEnv({ requireWriteAccess: !DRY_RUN && !DISCOVER_ONLY && !NOTIFY_ONLY && !BUDGET_ONLY });
 
 // ── Module imports ─────────────────────────────────────────────────────────
+const { getRWClient }                     = require('./twitter/client');
 const { discoverTweets, loadSeenIds }     = require('./discovery/tweet-search');
 const { enrichWithComments }              = require('./discovery/comment-reader');
 const { selectTopTweets }                 = require('./discovery/scorer');
@@ -66,6 +67,24 @@ async function main() {
   if (BUDGET_ONLY) {
     printBudgetStatus();
     return;
+  }
+
+  // ── Step 0: Verify auth ──────────────────────────────────────────────────
+  console.log('[ 0/9 ] Verifying auth...');
+  try {
+    const rwClient = getRWClient();
+    const me = await rwClient.v2.me();
+    console.log(`        ✓ Authenticated as @${me.data.username} (ID: ${me.data.id})`);
+    process.env.MY_TWITTER_USER_ID = me.data.id;
+  } catch (err) {
+    console.error('❌ AUTH FAILED:', err.message);
+    if (err.data) console.error('   Details:', JSON.stringify(err.data));
+    if (err.errors) console.error('   Errors:', JSON.stringify(err.errors));
+    console.error('');
+    console.error('Fix: Check your tokens in .env are correct and have Read+Write permissions.');
+    console.error('     Go to developer.x.com → App → Keys & Tokens → Regenerate.');
+    console.error('     Then re-run: node auth.js');
+    process.exit(1);
   }
 
   // ── Step 1: Budget check ─────────────────────────────────────────────────

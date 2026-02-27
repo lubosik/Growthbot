@@ -1,6 +1,6 @@
 const { getBearerClient } = require('../twitter/client');
 const { limiter, shortDelay } = require('../twitter/rate-limiter');
-const { checkBudget } = require('../tracking/budget');
+const { checkBudget, recordCost } = require('../tracking/budget');
 const targets = require('../config/targets');
 
 // In-memory dedup cache for this session (tweet IDs already seen today)
@@ -35,6 +35,8 @@ async function searchTweets(query, maxResults = 20) {
       'user.fields': ['public_metrics', 'username', 'name', 'verified'],
       expansions: ['author_id'],
     });
+
+    recordCost('recentSearch');
 
     if (!result.data || !result.data.data) {
       return [];

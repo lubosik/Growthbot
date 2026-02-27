@@ -230,6 +230,12 @@
   .rts     .stat-value { color:var(--mint); }
   .quotes  .stat-value { color:var(--purple); }
 
+  /* ── Mode badge ───────────────────────────────────────────────────── */
+  .mode-badge { font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px; }
+  .mode-normal  { background:rgba(48,209,88,0.18);color:var(--mint);border:1px solid rgba(48,209,88,0.3); }
+  .mode-reduced { background:rgba(255,159,10,0.18);color:var(--orange);border:1px solid rgba(255,159,10,0.3); }
+  .mode-stopped { background:rgba(255,69,58,0.18);color:var(--red);border:1px solid rgba(255,69,58,0.3); }
+
   /* ── Budget ───────────────────────────────────────────────────────── */
   .budget-card { border-radius:var(--r-lg);padding:24px 28px;margin-bottom:20px; }
   .budget-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:18px; }
@@ -572,14 +578,21 @@
   <div class="budget-card glass">
     <div class="budget-header">
       <span class="budget-title">Monthly Budget</span>
-      <span id="budgetPct" style="font-size:13px;color:var(--text-2)">0%</span>
+      <span style="display:flex;align-items:center;gap:10px">
+        <span id="budgetMode" class="mode-badge mode-normal">Normal</span>
+        <span id="budgetPct" style="font-size:13px;color:var(--text-2)">0%</span>
+      </span>
     </div>
     <div class="budget-amounts">
-      <span class="budget-spent" id="budgetSpent">$0.00</span>
+      <span class="budget-spent" id="budgetSpent">$0.0000</span>
       <span class="budget-sep">/</span>
-      <span class="budget-limit">$4.50</span>
+      <span class="budget-limit" id="budgetLimit">$4.50</span>
     </div>
     <div class="bar-track"><div class="bar-fill" id="budgetBar" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-3)">
+      <span id="budgetLastRun">Last run: —</span>
+      <span id="budgetPosts">— posts this month</span>
+    </div>
     <div class="budget-grid">
       <div class="bg-item"><div class="bi-label">Searches</div><div class="bi-value" id="bdSearches" style="color:var(--blue)">0</div></div>
       <div class="bg-item"><div class="bi-label">Claude Calls</div><div class="bi-value" id="bdClaude" style="color:var(--purple)">0</div></div>
@@ -919,17 +932,43 @@ function renderErrors(errors) {
 // ── Budget ─────────────────────────────────────────────────────────────────
 function renderBudget(budget) {
   if (!budget) return;
-  const spent    = budget.estimated_spend || budget.estimatedSpend || 0;
-  const hardStop = budget.hard_stop || budget.hardStop || 4.5;
-  const pct      = Math.min(100, (spent / hardStop) * 100);
+  const spent      = budget.estimated_spend ?? budget.estimatedSpend ?? 0;
+  const hardStop   = budget.hard_stop || budget.hardStop || 4.5;
+  const spendLimit = budget.spend_limit || budget.limit || hardStop;
+  const pct        = Math.min(100, (spent / hardStop) * 100);
+  const mode       = budget.mode || 'normal';
 
   document.getElementById('budgetSpent').textContent = '$' + spent.toFixed(4);
+  document.getElementById('budgetLimit').textContent = '$' + spendLimit.toFixed(2);
   document.getElementById('budgetPct').textContent   = pct.toFixed(1) + '%';
 
-  const bar = document.getElementById('budgetBar');
-  bar.style.width  = pct + '%';
-  bar.className    = 'bar-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warning' : '');
+  // Mode badge
+  const modeBadge = document.getElementById('budgetMode');
+  modeBadge.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+  modeBadge.className = 'mode-badge mode-' + mode;
 
+  // Progress bar — green <50%, yellow 50–80%, red >80%
+  const bar = document.getElementById('budgetBar');
+  bar.style.width = pct + '%';
+  bar.className   = 'bar-fill' + (pct >= 80 ? ' danger' : pct >= 50 ? ' warning' : '');
+
+  // Last run + errors
+  const lastRun = budget.last_run;
+  const errors  = budget.last_run_errors || 0;
+  const el = document.getElementById('budgetLastRun');
+  if (lastRun) {
+    el.textContent = 'Last run: ' + fmtDate(lastRun) + (errors > 0 ? ' · ' + errors + ' error' + (errors !== 1 ? 's' : '') : '');
+    el.style.color = errors > 0 ? 'var(--red)' : '';
+  } else {
+    el.textContent = 'Last run: —';
+    el.style.color = '';
+  }
+
+  // Posts this month
+  const posts = budget.posts_this_month != null ? budget.posts_this_month : '—';
+  document.getElementById('budgetPosts').textContent = posts + ' posts this month';
+
+  // Today's searches
   const today     = new Date().toISOString().split('T')[0];
   const todayData = (budget.daily_breakdown||{})[today] || {};
   document.getElementById('bdSearches').textContent = todayData.searches || 0;

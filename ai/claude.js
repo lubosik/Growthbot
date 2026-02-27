@@ -1,5 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const { limiter } = require('../twitter/rate-limiter');
+const { recordCost } = require('../tracking/budget');
 
 let _client = null;
 
@@ -37,6 +38,9 @@ async function callClaude(systemPrompt, userPrompt, opts = {}) {
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   });
+
+  const costType = model.includes('sonnet') ? 'claudeSonnet' : 'claudeHaiku';
+  recordCost(costType);
 
   const content = message.content[0];
   if (content.type !== 'text') {

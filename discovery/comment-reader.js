@@ -1,6 +1,6 @@
 const { getBearerClient } = require('../twitter/client');
 const { limiter, shortDelay } = require('../twitter/rate-limiter');
-const { checkBudget } = require('../tracking/budget');
+const { checkBudget, recordCost } = require('../tracking/budget');
 
 /**
  * Read the comment section of a tweet using its conversation_id.
@@ -26,6 +26,8 @@ async function readComments(tweet, maxResults = 20) {
         expansions: ['author_id'],
       }
     );
+
+    recordCost('recentSearch');
 
     if (!result.data || !result.data.data) {
       return [];

@@ -849,15 +849,22 @@
   <div class="budget-card glass">
     <div class="budget-header">
       <span class="budget-title">Monthly Budget</span>
-      <span id="budgetPercent" style="font-size:13px;color:var(--text-secondary)">0%</span>
+      <span style="display:flex;align-items:center;gap:12px">
+        <span id="budgetMode" class="mode-badge mode-normal">Normal</span>
+        <span id="budgetPercent" style="font-size:13px;color:var(--text-secondary)">0%</span>
+      </span>
     </div>
     <div class="budget-amounts">
-      <span class="budget-spent" id="budgetSpent">$0.00</span>
+      <span class="budget-spent" id="budgetSpent">$0.0000</span>
       <span class="budget-separator">/</span>
-      <span class="budget-limit">$4.50</span>
+      <span class="budget-limit" id="budgetLimit">$4.50</span>
     </div>
     <div class="budget-bar-track">
       <div class="budget-bar-fill" id="budgetBar" style="width:0%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-tertiary)">
+      <span id="budgetLastRun">Last run: —</span>
+      <span id="budgetPosts">— posts this month</span>
     </div>
     <div class="budget-breakdown">
       <div class="budget-item">
@@ -1136,16 +1143,41 @@ function renderErrors(errors) {
 function renderBudget(budget) {
   if (!budget) return;
 
-  const spent = budget.estimated_spend || budget.estimatedSpend || 0;
+  const spent = budget.estimated_spend ?? budget.estimatedSpend ?? 0;
   const hardStop = budget.hard_stop || budget.hardStop || 4.5;
+  const spendLimit = budget.spend_limit || budget.limit || hardStop;
   const pct = Math.min(100, (spent / hardStop) * 100);
+  const mode = budget.mode || 'normal';
 
   document.getElementById('budgetSpent').textContent = '$' + spent.toFixed(4);
+  document.getElementById('budgetLimit').textContent = '$' + spendLimit.toFixed(2);
   document.getElementById('budgetPercent').textContent = pct.toFixed(1) + '%';
 
+  // Mode badge
+  const modeBadge = document.getElementById('budgetMode');
+  modeBadge.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+  modeBadge.className = 'mode-badge mode-' + mode;
+
+  // Progress bar — green <50%, yellow 50-80%, red >80%
   const bar = document.getElementById('budgetBar');
   bar.style.width = pct + '%';
-  bar.className = 'budget-bar-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warning' : '');
+  bar.className = 'budget-bar-fill' + (pct >= 80 ? ' danger' : pct >= 50 ? ' warning' : '');
+
+  // Last run + error count
+  const lastRun = budget.last_run;
+  const errors = budget.last_run_errors || 0;
+  const lastRunEl = document.getElementById('budgetLastRun');
+  if (lastRun) {
+    lastRunEl.textContent = 'Last run: ' + fmtDate(lastRun) + (errors > 0 ? ' · ' + errors + ' error' + (errors !== 1 ? 's' : '') : '');
+    lastRunEl.style.color = errors > 0 ? 'var(--red)' : 'var(--text-tertiary)';
+  } else {
+    lastRunEl.textContent = 'Last run: —';
+    lastRunEl.style.color = '';
+  }
+
+  // Posts this month
+  const posts = budget.posts_this_month != null ? budget.posts_this_month : '—';
+  document.getElementById('budgetPosts').textContent = posts + ' posts this month';
 
   // Today's searches from daily_breakdown
   const today = new Date().toISOString().split('T')[0];

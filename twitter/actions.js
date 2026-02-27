@@ -1,6 +1,6 @@
 const { getRWClient } = require('./client');
 const { limiter, randomDelay } = require('./rate-limiter');
-const { checkBudget } = require('../tracking/budget');
+const { checkBudget, recordCost } = require('../tracking/budget');
 
 /**
  * Shuffle an array in place (Fisher-Yates).
@@ -39,6 +39,7 @@ async function replyToTweet(tweetId, text) {
     text,
     reply: { in_reply_to_tweet_id: tweetId },
   });
+  recordCost('createTweet');
   return result.data;
 }
 
@@ -54,6 +55,7 @@ async function likeTweet(tweetId) {
   const userId = await getMyUserId();
   const client = getRWClient();
   const result = await client.v2.like(userId, tweetId);
+  recordCost('like');
   return result.data;
 }
 
@@ -69,6 +71,7 @@ async function retweetTweet(tweetId) {
   const userId = await getMyUserId();
   const client = getRWClient();
   const result = await client.v2.retweet(userId, tweetId);
+  recordCost('retweet');
   return result.data;
 }
 
@@ -86,6 +89,7 @@ async function quoteTweet(tweetId, text) {
     text,
     quote_tweet_id: tweetId,
   });
+  recordCost('quoteTweet');
   return result.data;
 }
 
@@ -144,7 +148,22 @@ async function engageTweet(tweet, replyText, opts = {}) {
         await new Promise(r => setTimeout(r, delaySec * 1000));
       }
     } catch (err) {
-      console.error(`[action] Failed to ${action} tweet ${tweet.id}:`, err.message);
+      console.error(`[action] Failed to ${action} tweet ${tweet.id}:`);
+      console.error(`  Status: ${err.code || err.status || 'unknown'}`);
+      console.error(`  Message: ${err.message}`);
+      if (err.data) console.error(`  Details: ${JSON.stringify(err.data)}`);
+      if (err.errors) console.error(`  Errors: ${JSON.stringify(err.errors)}`);
+      const code = err.code || err.status;
+      if (code === 403) {
+        console.error(`  → 403: Missing write permissions. Re-run: node auth.js`);
+        console.error(`  → Or go to developer.x.com → App → Settings → Read+Write permissions → Regenerate tokens`);
+      } else if (code === 429) {
+        console.error(`  → 429: Rate limited. Wait for rate limit reset before next run.`);
+      } else if (code === 401) {
+        console.error(`  → 401: Invalid/expired credentials. Re-run: node auth.js`);
+      } else if (code === 400) {
+        console.error(`  → 400: Bad request. Check tweet ID is valid and not deleted.`);
+      }
       results.errors.push({ action, error: err.message });
     }
   }

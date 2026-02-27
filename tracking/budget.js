@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { sendBudgetAlert, sendHardStopAlert } = require('../telegram/notifier');
+const storage = require('../lib/storage');
 
 const BUDGET_FILE = path.join(__dirname, '../logs/monthly-budget.json');
 
@@ -61,6 +62,8 @@ function saveBudget(data) {
   fs.mkdirSync(path.dirname(BUDGET_FILE), { recursive: true });
   data.lastUpdated = new Date().toISOString();
   fs.writeFileSync(BUDGET_FILE, JSON.stringify(data, null, 2));
+  // Also persist to Redis so the Vercel dashboard can read it
+  storage.set(`budget:${data.month}`, data).catch(() => {});
 }
 
 /**
