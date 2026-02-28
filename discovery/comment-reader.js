@@ -16,6 +16,11 @@ async function readComments(tweet, maxResults = 20) {
   const client = getBearerClient();
   const conversationId = tweet.conversationId || tweet.id;
 
+  // Bail if X API has rate-limited us
+  if (limiter.isGloballyBlocked()) {
+    return [];
+  }
+
   try {
     const result = await client.v2.search(
       `conversation_id:${conversationId} -is:retweet`,
@@ -28,6 +33,11 @@ async function readComments(tweet, maxResults = 20) {
     );
 
     recordCost('recentSearch');
+
+    // Sync local rate limit state with actual headers
+    if (result.rateLimit && result.rateLimit.reset) {
+      limiter.syncFromApiHeaders('recentSearch', result.rateLimit);
+    }
 
     if (!result.data || !result.data.data) {
       return [];
@@ -53,6 +63,11 @@ async function readComments(tweet, maxResults = 20) {
       };
     });
   } catch (err) {
+    // Propagate rate limit block so comment enrichment stops
+    if (err.rateLimitError && err.rateLimit && err.rateLimit.reset) {
+      limiter.setGlobalBlock(err.rateLimit.reset);
+      return [];
+    }
     console.error(`[comments] Failed for tweet ${tweet.id}:`, err.message);
     return [];
   }

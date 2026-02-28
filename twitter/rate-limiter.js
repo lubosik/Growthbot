@@ -86,6 +86,49 @@ class RateLimiter {
     return true;
   }
 
+  /**
+   * Sync local rate limit state from actual X API response headers.
+   * Call this after a successful API response.
+   * rateLimit = { limit, remaining, reset } where reset is Unix seconds.
+   */
+  syncFromApiHeaders(action, rateLimit) {
+    if (!rateLimit || !rateLimit.reset) return;
+    const resetAt = rateLimit.reset * 1000; // seconds → ms
+    const count = Math.max(0, (rateLimit.limit || 0) - (rateLimit.remaining || 0));
+    this.state.windows[action] = { count, resetAt };
+    saveState(this.state);
+  }
+
+  /**
+   * Set a global search block from a 429 response.
+   * resetTimeSec is the Unix timestamp (seconds) when the block lifts.
+   */
+  setGlobalBlock(resetTimeSec) {
+    const resetMs = resetTimeSec * 1000;
+    this.state.globalBlockedUntil = resetMs;
+    saveState(this.state);
+    const waitMin = Math.ceil((resetMs - Date.now()) / 60000);
+    console.warn(`[rate] X API 429 — search blocked for ~${waitMin} min (until ${new Date(resetMs).toISOString()})`);
+  }
+
+  /**
+   * Returns true if X API has told us to back off (from a previous 429).
+   */
+  isGloballyBlocked() {
+    const blockedUntil = this.state.globalBlockedUntil || 0;
+    if (Date.now() < blockedUntil) return true;
+    // Auto-clear expired block
+    if (blockedUntil && Date.now() >= blockedUntil) {
+      this.state.globalBlockedUntil = 0;
+      saveState(this.state);
+    }
+    return false;
+  }
+
+  getBlockedUntil() {
+    return this.state.globalBlockedUntil || 0;
+  }
+
   getSessionCost() {
     return this._sessionCost;
   }

@@ -33,7 +33,7 @@ const { selectTopTweets }                 = require('./discovery/scorer');
 const { generateReply }                   = require('./ai/reply-generator');
 const { enrichWithResearch }              = require('./ai/research');
 const { engageTweet }                     = require('./twitter/actions');
-const { randomDelay }                     = require('./twitter/rate-limiter');
+const { randomDelay, limiter }             = require('./twitter/rate-limiter');
 const { checkBudget, getBudgetStatus,
         incrementRunCount, printBudgetStatus,
         recordCost }                      = require('./tracking/budget');
@@ -146,7 +146,13 @@ async function main() {
   }
 
   if (tweets.length === 0) {
-    console.warn('No tweets found. Ending run.');
+    if (limiter.isGloballyBlocked()) {
+      const resetMs = limiter.getBlockedUntil();
+      const waitMin = Math.ceil((resetMs - Date.now()) / 60000);
+      console.warn(`No tweets found — X API search rate limited. Retry in ~${waitMin} min (${new Date(resetMs).toISOString()})`);
+    } else {
+      console.warn('No new tweets found (all already seen or no recent activity). Ending run.');
+    }
     await saveLog(log);
     return;
   }
